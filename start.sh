@@ -1,8 +1,7 @@
 #!/bin/bash
-# NexGen Hospital - Mac/Linux start script
+# NexGen Hospital - Start Script (Fixed for Render + Local)
 
 set -e
-cd "$(dirname "$0")"
 
 echo ""
 echo " ================================================"
@@ -10,35 +9,43 @@ echo "  NexGen Hospital Management System"
 echo " ================================================"
 echo ""
 
+# -------------------------------
 # Check Python
+# -------------------------------
 if ! command -v python3 &>/dev/null; then
     echo " [ERROR] Python 3 not found!"
-    echo " Mac:   brew install python"
-    echo " Linux: sudo apt install python3 python3-pip python3-venv"
     exit 1
 fi
+
 echo " [OK] $(python3 --version)"
 
-# Create venv
-if [ ! -d "backend/venv" ]; then
+# -------------------------------
+# Create virtual environment
+# -------------------------------
+if [ ! -d "venv" ]; then
     echo " [SETUP] Creating virtual environment..."
-    python3 -m venv backend/venv
+    python3 -m venv venv
 fi
 
-source backend/venv/bin/activate
+source venv/bin/activate
 
+# -------------------------------
+# Install dependencies
+# -------------------------------
 echo " [SETUP] Installing dependencies..."
-pip install -r backend/requirements.txt -q
+pip install --upgrade pip
+pip install -r requirements.txt
 
+# -------------------------------
+# Start Server
+# -------------------------------
 echo ""
 echo " ================================================"
-echo " Make sure Neo4j Desktop is running first!"
-echo " Neo4j password must be: nexgen123"
-echo ""
-echo " Once started, open: http://localhost:8000"
-echo " Swagger API docs:   http://localhost:8000/docs"
+echo "  Starting NexGen API Server..."
 echo " ================================================"
 echo ""
 
-cd backend
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# Render uses PORT env variable
+PORT=${PORT:-8000}
+
+uvicorn main:app --host 0.0.0.0 --port $PORT
