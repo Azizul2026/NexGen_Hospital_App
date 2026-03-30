@@ -20,7 +20,7 @@ def login(data: dict):
 
     # ❌ VALIDATION
     if not verify_password(password, user["password"]):
-    raise HTTPException(401, "Invalid username or password")
+        raise HTTPException(401, "Invalid username or password")
 
     # 🔍 FIND USER
     row = db.run_one("MATCH (u:User {username:$u}) RETURN u", u=username)
