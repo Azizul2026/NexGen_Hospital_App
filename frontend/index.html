@@ -311,20 +311,20 @@ footer{background:var(--surface);border-top:1px solid var(--border);
   <div class="section-title">Login as who you are.</div>
   <p class="section-desc">Three distinct dashboards — each tailored with the tools and data that role actually needs.</p>
   <div class="portals-grid">
-    <a href="login.html?role=patient" class="portal-card patient">
-      <div class="portal-icon">🧑‍⚕️</div>
+<a href="#" onclick="goToLogin('PATIENT')" class="portal-card patient">
+  <div class="portal-icon">🧑‍⚕️</div>
       <div class="portal-title">Patient Portal</div>
       <div class="portal-desc">View your medical records, upcoming appointments, prescriptions, test results, and assigned doctor — all from your personal dashboard.</div>
       <div class="portal-btn">Patient Login →</div>
     </a>
-    <a href="login.html?role=doctor" class="portal-card doctor">
-      <div class="portal-icon">👨‍⚕️</div>
+<a href="#" onclick="goToLogin('DOCTOR')" class="portal-card doctor">
+  <div class="portal-icon">👨‍⚕️</div>
       <div class="portal-title">Doctor Portal</div>
       <div class="portal-desc">Manage your patient list, today's appointments, write medical records, prescriptions, and lab order notes in one place.</div>
       <div class="portal-btn">Doctor Login →</div>
     </a>
-    <a href="login.html?role=admin" class="portal-card admin">
-      <div class="portal-icon">🏥</div>
+<a href="#" onclick="goToLogin('ADMIN')" class="portal-card admin">
+  <div class="portal-icon">🏥</div>
       <div class="portal-title">Admin Portal</div>
       <div class="portal-desc">Admit patients, assign doctors, schedule appointments, manage wards, billing, pharmacy inventory and generate reports.</div>
       <div class="portal-btn">Admin Login →</div>
@@ -358,14 +358,14 @@ footer{background:var(--surface);border-top:1px solid var(--border);
         <div class="contact-icon">📍</div>
         <div>
           <div class="contact-label">Address</div>
-          <div class="contact-val">14, Park Street, Kolkata — 700 016, West Bengal, India</div>
+          <div class="contact-val">Khandagiri,Bhubaneswar — 751001,Odisha, India</div>
         </div>
       </div>
       <div class="contact-item">
         <div class="contact-icon">📞</div>
         <div>
           <div class="contact-label">Emergency Helpline</div>
-          <div class="contact-val" style="color:var(--red);font-weight:600">+91 33 4000 1234</div>
+          <div class="contact-val" style="color:var(--red);font-weight:600">+91 7377236628</div>
         </div>
       </div>
       <div class="contact-item">
@@ -418,21 +418,26 @@ footer{background:var(--surface);border-top:1px solid var(--border);
 </footer>
 
 <script src="js/api.js"></script>
+
 <script>
-// Smooth scroll for anchor links
+// ================= ROLE NAVIGATION FIX =================
+function goToLogin(role) {
+  localStorage.setItem("login_role", role);
+  window.location.href = "login.html";
+}
+
+// ================= SMOOTH SCROLL =================
 document.querySelectorAll('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
-    e.preventDefault();
-    const target = document.querySelector(a.getAttribute('href'));
-    if (target) target.scrollIntoView({ behavior: 'smooth' });
+    if (!a.getAttribute('onclick')) {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    }
   });
 });
 
-// Pre-fill role hint from URL param
-const urlRole = new URLSearchParams(location.search).get('role');
-if (urlRole) window.location.href = `login.html?role=${urlRole}`;
-
-// Animate elements on scroll
+// ================= ANIMATION =================
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => {
     if (e.isIntersecting) {
