@@ -20,7 +20,7 @@ email-validator==2.1.1
 python-dotenv==1.0.1
 
 # ── AI / ML (ready for future predictions) ─────────────────
-numpy==2.26.4
+numpy==2.3.2
 pandas==2.1.4
 scikit-learn==1.4.2
 joblib==1.4.2
