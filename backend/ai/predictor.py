@@ -5,7 +5,7 @@ import joblib
 import os
 
 # ================= PATH =================
-DATA_PATH = os.path.join("ai", "data", "hospital_data.csv")
+DATA_PATH = r"C:\Users\ASUS\Downloads\nexgen-hospital-system (1)\backend\ai\data\hospital_data.csv"
 
 MODEL_DIR = os.path.join("ai", "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
@@ -16,7 +16,7 @@ ICU_MODEL_PATH = os.path.join(MODEL_DIR, "icu_model.pkl")
 # ================= LOAD DATA =================
 print("📊 Loading dataset...")
 
-df = pd.read_csv(DATA_PATH)
+df = pd.read_csv(DATA_PATH, sep="\t", engine="python")
 print("✅ Dataset loaded:", df.shape)
 print("Columns:", df.columns.tolist())
 
