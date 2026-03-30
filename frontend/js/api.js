@@ -1,5 +1,5 @@
 /**
- * NexGen Hospital — API Client (FINAL PRODUCTION READY)
+ * NexGen Hospital — API Client (FINAL FIXED)
  */
 
 const API = (() => {
@@ -12,7 +12,7 @@ const API = (() => {
 
   const headers = () => ({
     "Content-Type": "application/json",
-    ...(token() && { Authorization: `Bearer ${token}` })
+    ...(token() ? { Authorization: `Bearer ${token()}` } : {})
   });
 
   // ================= CORE REQUEST =================
@@ -24,13 +24,22 @@ const API = (() => {
         ...(body && { body: JSON.stringify(body) })
       });
 
+      // 🔥 HANDLE TEXT RESPONSE FIRST (FIXES JSON ERROR)
+      const text = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("RAW RESPONSE:", text);
+        throw new Error("Server error: " + text);
+      }
+
       // 🔁 HANDLE UNAUTHORIZED
       if (res.status === 401) {
         logout();
         throw new Error("Session expired. Please login again.");
       }
-
-      const data = await res.json();
 
       if (!res.ok) {
         throw new Error(data.detail || data.message || "Request failed");
@@ -61,7 +70,7 @@ const API = (() => {
       localStorage.setItem("nexgen_token", d.token);
       localStorage.setItem("nexgen_username", d.username);
       localStorage.setItem("nexgen_role", d.role);
-      localStorage.setItem("nexgen_name", d.fullName);
+      localStorage.setItem("nexgen_name", d.fullName || "");
 
       return d;
     }
@@ -112,18 +121,14 @@ const API = (() => {
   }
 
   // ================= ADMIN APIs =================
-
-  // 🔥 CREATE USER
   async function createUser(data) {
     return await post("/api/admin/create-user", data);
   }
 
-  // 🔥 DELETE USER
   async function deleteUser(username) {
     return await del(`/api/admin/user/${username}`);
   }
 
-  // 🔥 UPDATE USER
   async function updateUser(username, data) {
     return await put(`/api/admin/user/${username}`, data);
   }
@@ -187,7 +192,7 @@ const API = (() => {
     get, post, put, patch, del,
     login, logout, getUser, requireRole, roleHome,
 
-    // 🔥 Admin
+    // Admin
     createUser,
     deleteUser,
     updateUser,
@@ -200,7 +205,7 @@ const API = (() => {
     getRecords,
     getDashboard,
 
-    // 🤖 AI
+    // AI
     predictDisease,
     predictRisk,
     predictICU,
@@ -208,7 +213,6 @@ const API = (() => {
   };
 
 })();
-
 
 // ================= TOAST =================
 function toast(msg, type = "success") {
