@@ -1,10 +1,10 @@
 /**
- * NexGen Hospital — API Client (PRODUCTION READY)
+ * NexGen Hospital — API Client (FINAL PRODUCTION)
  */
 
 const API = (() => {
 
-  // 🌐 YOUR LIVE BACKEND URL
+  // 🌐 LIVE BACKEND (Render)
   const BASE = "https://nexgen-hospital-app.onrender.com";
 
   // ================= TOKEN =================
@@ -17,35 +17,52 @@ const API = (() => {
 
   // ================= CORE REQUEST =================
   async function request(method, path, body) {
-    const res = await fetch(`${BASE}${path}`, {
-      method,
-      headers: headers(),
-      ...(body && { body: JSON.stringify(body) })
-    });
+    try {
+      const res = await fetch(`${BASE}${path}`, {
+        method,
+        headers: headers(),
+        ...(body && { body: JSON.stringify(body) })
+      });
 
-    // 🔁 Auto refresh token (optional safety)
-    if (res.status === 401) {
-      const refresh = localStorage.getItem("nexgen_refresh");
-
-      if (refresh) {
-        const r = await fetch(`${BASE}/api/auth/refresh`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: refresh })
-        });
-
-        const data = await r.json();
-
-        if (data.access_token) {
-          localStorage.setItem("nexgen_token", data.access_token);
-          return request(method, path, body);
-        }
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
       }
 
-      throw new Error("Unauthorized");
-    }
+      // 🔁 Handle Unauthorized (optional refresh)
+      if (res.status === 401) {
+        const refresh = localStorage.getItem("nexgen_refresh");
 
-    return res.json();
+        if (refresh) {
+          const r = await fetch(`${BASE}/api/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: refresh })
+          });
+
+          const newData = await r.json();
+
+          if (newData.access_token) {
+            localStorage.setItem("nexgen_token", newData.access_token);
+            return request(method, path, body);
+          }
+        }
+
+        throw new Error("Unauthorized");
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || "API Error");
+      }
+
+      return data;
+
+    } catch (err) {
+      console.error("API Error:", err);
+      throw err;
+    }
   }
 
   // ================= GENERIC =================
