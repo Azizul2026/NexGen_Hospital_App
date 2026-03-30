@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 def seed_all():
     """Create demo data if DB is empty"""
 
-    existing = db.run_one("MATCH (u:User {username:'admin'}) RETURN u")
-
+existing = db.run_one("MATCH (u:User) RETURN u LIMIT 1")
     if existing:
         logger.info("📦 Seed data already exists — skipping")
         return
