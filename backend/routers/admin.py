@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/admin", tags=["Admin"])
 # 🔥 CREATE USER (FIXED WITH SCHEMA)
 # =========================================================
 @router.post("/create-user")
-def create_user(body: UserCreate, user=Depends(admin_only)):
+def create_user(body: UserCreate):   # 🔥 removed admin_only
 
     # check existing
     if db.run_one("MATCH (u:User {username:$u}) RETURN u", u=body.username):
