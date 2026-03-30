@@ -2,28 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from core.security import admin_only, hash_password
 from core.database import db
 from models.schemas import (
-    APIResponse, PatientCreate, PatientUpdate,
-    DoctorCreate, DoctorUpdate,
-    AppointmentCreate, AppointmentUpdate
+    APIResponse, PatientCreate, DoctorCreate,
+    AppointmentCreate, UserCreate
 )
 from datetime import date
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
+
 # =========================================================
-# 🔥 CREATE USER (ADMIN ONLY)
+# 🔥 CREATE USER (FIXED WITH SCHEMA)
 # =========================================================
 @router.post("/create-user")
-def create_user(data: dict, user=Depends(admin_only)):
-    username = data.get("username")
-    password = data.get("password")
-    role = data.get("role")
-
-    if not username or not password or not role:
-        raise HTTPException(400, "Missing fields")
+def create_user(body: UserCreate, user=Depends(admin_only)):
 
     # check existing
-    if db.run_one("MATCH (u:User {username:$u}) RETURN u", u=username):
+    if db.run_one("MATCH (u:User {username:$u}) RETURN u", u=body.username):
         raise HTTPException(400, "Username already exists")
 
     db.run("""
@@ -35,13 +29,13 @@ def create_user(data: dict, user=Depends(admin_only)):
         created_at:$today
     })
     """,
-    username=username,
-    password=hash_password(password),
-    role=role,
+    username=body.username,
+    password=hash_password(body.password),
+    role=body.role.upper(),
     today=str(date.today())
     )
 
-    return APIResponse.ok(message=f"{role} created successfully")
+    return APIResponse.ok(message=f"{body.role} created successfully")
 
 
 # =========================================================
@@ -49,6 +43,7 @@ def create_user(data: dict, user=Depends(admin_only)):
 # =========================================================
 @router.get("/dashboard")
 def dashboard(user=Depends(admin_only)):
+
     total_patients = db.run_one("MATCH (p:Patient) RETURN count(p) AS c")["c"]
     total_doctors = db.run_one("MATCH (d:Doctor {active:true}) RETURN count(d) AS c")["c"]
 
@@ -98,7 +93,7 @@ def admit_patient(body: PatientCreate, user=Depends(admin_only)):
     today=today
     )
 
-    return APIResponse.ok(message="Patient created")
+    return APIResponse.ok(message="Patient created successfully")
 
 
 # =========================================================
@@ -141,7 +136,7 @@ def create_doctor(body: DoctorCreate, user=Depends(admin_only)):
     today=today
     )
 
-    return APIResponse.ok(message="Doctor created")
+    return APIResponse.ok(message="Doctor created successfully")
 
 
 # =========================================================
@@ -155,6 +150,7 @@ def get_appointments(user=Depends(admin_only)):
 
 @router.post("/appointments")
 def create_appointment(body: AppointmentCreate, user=Depends(admin_only)):
+
     today = str(date.today())
 
     db.run("""
@@ -174,22 +170,34 @@ def create_appointment(body: AppointmentCreate, user=Depends(admin_only)):
     today=today
     )
 
-    return APIResponse.ok(message="Appointment created")
-# ================= DELETE USER =================
+    return APIResponse.ok(message="Appointment created successfully")
+
+
+# =========================================================
+# 🗑 DELETE USER (FIXED SAFE DELETE)
+# =========================================================
 @router.delete("/user/{username}")
 def delete_user(username: str, user=Depends(admin_only)):
-    db.run("MATCH (u:User {username:$u}) DELETE u", u=username)
-    db.run("MATCH (p {username:$u}) DETACH DELETE p", u=username)
-    return APIResponse.ok(message="User deleted")
+
+    db.run("MATCH (u:User {username:$u}) DETACH DELETE u", u=username)
+
+    return APIResponse.ok(message="User deleted successfully")
 
 
-# ================= UPDATE USER =================
+# =========================================================
+# ✏️ UPDATE USER (SAFE)
+# =========================================================
 @router.put("/user/{username}")
 def update_user(username: str, data: dict, user=Depends(admin_only)):
+
     updates = {k: v for k, v in data.items() if v is not None}
 
     if not updates:
-        raise HTTPException(400, "No data")
+        raise HTTPException(400, "No data provided")
+
+    # 🔥 hash password if updated
+    if "password" in updates:
+        updates["password"] = hash_password(updates["password"])
 
     set_clause = ", ".join([f"u.{k} = ${k}" for k in updates])
 
@@ -198,4 +206,4 @@ def update_user(username: str, data: dict, user=Depends(admin_only)):
     SET {set_clause}
     """, username=username, **updates)
 
-    return APIResponse.ok(message="User updated")
+    return APIResponse.ok(message="User updated successfully")
