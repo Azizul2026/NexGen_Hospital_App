@@ -82,7 +82,7 @@ async def security_headers(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://nex-gen-hospital-app.vercel.app",  # ✅ your frontend
+        "https://nex-gen-hospital-app.vercel.app",
         "http://localhost:3000",
         "http://127.0.0.1:5500",
         "*"
@@ -91,8 +91,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 # ─────────────────────────────────────────────
 # 🔗 ROUTERS
 # ─────────────────────────────────────────────
