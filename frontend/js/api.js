@@ -1,10 +1,10 @@
 /**
- * NexGen Hospital — API Client (FINAL PRODUCTION)
+ * NexGen Hospital — API Client (FINAL PRODUCTION READY)
  */
 
 const API = (() => {
 
-  // 🌐 LIVE BACKEND (Render)
+  // 🌐 BACKEND URL
   const BASE = "https://nexgen-hospital-app.onrender.com";
 
   // ================= TOKEN =================
@@ -24,43 +24,21 @@ const API = (() => {
         ...(body && { body: JSON.stringify(body) })
       });
 
-      let data = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
-
-      // 🔁 Handle Unauthorized (optional refresh)
+      // 🔁 Handle unauthorized
       if (res.status === 401) {
-        const refresh = localStorage.getItem("nexgen_refresh");
-
-        if (refresh) {
-          const r = await fetch(`${BASE}/api/auth/refresh`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refresh_token: refresh })
-          });
-
-          const newData = await r.json();
-
-          if (newData.access_token) {
-            localStorage.setItem("nexgen_token", newData.access_token);
-            return request(method, path, body);
-          }
-        }
-
-        throw new Error("Unauthorized");
+        throw new Error("Unauthorized — please login again");
       }
+
+      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "API Error");
+        throw new Error(data.message || "Request failed");
       }
 
       return data;
 
     } catch (err) {
-      console.error("API Error:", err);
+      console.error("API ERROR:", err);
       throw err;
     }
   }
@@ -133,6 +111,12 @@ const API = (() => {
   }
 
   // ================= ADMIN APIs =================
+
+  // 🔥 CREATE USER (NEW)
+  async function createUser(data) {
+    return await post("/api/admin/create-user", data);
+  }
+
   async function getPatients() {
     const res = await get("/api/admin/patients");
     return res.data || [];
@@ -192,7 +176,8 @@ const API = (() => {
     get, post, put, patch, del,
     login, logout, getUser, requireRole, roleHome,
 
-    // Admin
+    // 🔥 Admin
+    createUser,
     getPatients,
     addPatient,
     getDoctors,
@@ -202,7 +187,7 @@ const API = (() => {
     getRecords,
     getDashboard,
 
-    // AI
+    // 🤖 AI
     predictDisease,
     predictRisk,
     predictICU,
@@ -210,7 +195,6 @@ const API = (() => {
   };
 
 })();
-
 
 // ================= TOAST =================
 function toast(msg, type = "success") {
