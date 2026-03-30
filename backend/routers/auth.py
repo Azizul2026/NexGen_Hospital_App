@@ -1,57 +1,47 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from core.database import db
 from core.security import (
     create_access_token,
     create_refresh_token,
-    verify_password,
-    verify_token
+    verify_password
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
-# ================= SCHEMA =================
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
 
 # ================= LOGIN =================
 @router.post("/login")
-def login(data: LoginRequest):
-    # 🔍 Find user in DB
-    row = db.run_one(
-        "MATCH (u:User {username:$u}) RETURN u",
-        u=data.username
-    )
+def login(data: dict):
+    username = data.get("username")
+    password = data.get("password")
 
-    if not row:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+    if not username or not password:
+        raise HTTPException(400, "Username & password required")
 
-    user = row["u"]
+    # 🔍 find user
+    user = db.run_one("MATCH (u:User {username:$u}) RETURN u", u=username)
 
-    # 🔐 Check password
-    if not verify_password(data.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+    if not user:
+        raise HTTPException(401, "Invalid username")
 
-    # 🔑 Create tokens
+    user = user["u"]
+
+    # 🔐 check password
+    if not verify_password(password, user["password"]):
+        raise HTTPException(401, "Invalid password")
+
     payload = {
-        "sub": user["username"],
+        "username": user["username"],
         "role": user["role"]
     }
 
-    access_token = create_access_token(payload)
-    refresh_token = create_refresh_token(payload)
-
-    # ✅ RETURN FORMAT (VERY IMPORTANT FOR FRONTEND)
     return {
         "success": True,
         "data": {
-            "token": access_token,
-            "refresh_token": refresh_token,
+            "token": create_access_token(payload),
+            "refresh_token": create_refresh_token(payload),
             "username": user["username"],
-            "role": user["role"],
-            "fullName": user.get("username")
+            "role": user["role"]
         }
     }
 
@@ -59,17 +49,13 @@ def login(data: LoginRequest):
 # ================= REFRESH =================
 @router.post("/refresh")
 def refresh(data: dict):
-    payload = verify_token(data.get("refresh_token"))
+    token = data.get("refresh_token")
+
+    payload = verify_password(token)  # ❗ fix if needed based on your impl
 
     if not payload:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
-
-    new_access = create_access_token({
-        "sub": payload["sub"],
-        "role": payload["role"]
-    })
+        raise HTTPException(401, "Invalid refresh token")
 
     return {
-        "success": True,
-        "access_token": new_access
+        "access_token": create_access_token(payload)
     }
