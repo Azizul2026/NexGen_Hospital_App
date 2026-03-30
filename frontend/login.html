@@ -59,7 +59,7 @@ button{
 
 <body>
 
-<div class="box">
+<form class="box" onsubmit="event.preventDefault(); doLogin();">
 <h2>Login</h2>
 
 <div class="role">
@@ -161,6 +161,6 @@ if(token && role){
     "patient.html";
 }
 </script>
-
+</form>
 </body>
 </html>
