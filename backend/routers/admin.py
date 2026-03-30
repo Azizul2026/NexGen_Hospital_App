@@ -175,3 +175,27 @@ def create_appointment(body: AppointmentCreate, user=Depends(admin_only)):
     )
 
     return APIResponse.ok(message="Appointment created")
+# ================= DELETE USER =================
+@router.delete("/user/{username}")
+def delete_user(username: str, user=Depends(admin_only)):
+    db.run("MATCH (u:User {username:$u}) DELETE u", u=username)
+    db.run("MATCH (p {username:$u}) DETACH DELETE p", u=username)
+    return APIResponse.ok(message="User deleted")
+
+
+# ================= UPDATE USER =================
+@router.put("/user/{username}")
+def update_user(username: str, data: dict, user=Depends(admin_only)):
+    updates = {k: v for k, v in data.items() if v is not None}
+
+    if not updates:
+        raise HTTPException(400, "No data")
+
+    set_clause = ", ".join([f"u.{k} = ${k}" for k in updates])
+
+    db.run(f"""
+    MATCH (u:User {{username:$username}})
+    SET {set_clause}
+    """, username=username, **updates)
+
+    return APIResponse.ok(message="User updated")
