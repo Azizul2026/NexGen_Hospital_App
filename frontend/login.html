@@ -1,129 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — NexGen Hospital</title>
+
+<style>
+body{
+  background:#04080f;
+  color:white;
+  font-family:Arial;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+.box{
+  background:#0b1120;
+  padding:30px;
+  border-radius:12px;
+  width:320px;
+}
+input{
+  width:100%;
+  margin:10px 0;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #1e2d47;
+  background:#111827;
+  color:white;
+}
+button{
+  width:100%;
+  padding:12px;
+  background:#00d4ff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+.role{
+  display:flex;
+  gap:10px;
+  margin-bottom:15px;
+}
+.role div{
+  flex:1;
+  padding:8px;
+  text-align:center;
+  border:1px solid #1e2d47;
+  border-radius:8px;
+  cursor:pointer;
+}
+.active{
+  background:#00d4ff;
+  color:black;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>Login</h2>
+
+<div class="role">
+  <div class="role-tab" data-role="PATIENT" onclick="setRole('PATIENT',this)">Patient</div>
+  <div class="role-tab" data-role="DOCTOR" onclick="setRole('DOCTOR',this)">Doctor</div>
+  <div class="role-tab" data-role="ADMIN" onclick="setRole('ADMIN',this)">Admin</div>
+</div>
+
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="doLogin()">Login</button>
+
+</div>
+
 <script src="js/api.js"></script>
 
-<!-- ✅ TOAST SYSTEM -->
 <script>
-function toast(msg,type='info'){
-  const colors = {
-    success:'#00e5a0',
-    error:'#ff4757',
-    warn:'#ffa500',
-    info:'#00d4ff'
-  };
+// ================= ROLE FIX =================
+let selectedRole = "PATIENT";
 
-  let container = document.getElementById('toastBox');
+function setRole(role, el){
+  selectedRole = role;
 
-  if(!container){
-    container = document.createElement('div');
-    container.id = 'toastBox';
-    container.style.cssText = `
-      position:fixed;
-      bottom:20px;
-      right:20px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      z-index:9999;
-    `;
-    document.body.appendChild(container);
-  }
-
-  const el = document.createElement('div');
-  el.style.cssText = `
-    background:#0b1120;
-    color:#fff;
-    padding:12px 18px;
-    border-radius:10px;
-    border-left:4px solid ${colors[type]};
-    font-size:13px;
-    box-shadow:0 5px 20px rgba(0,0,0,.4);
-  `;
-  el.textContent = msg;
-
-  container.appendChild(el);
-
-  setTimeout(()=>{
-    el.style.opacity='0';
-    el.style.transition='opacity .3s';
-    setTimeout(()=>el.remove(),300);
-  },3000);
-}
-</script>
-
-<script>
-const hints = {
-  ADMIN: 'Admin: full control — patients, doctors, appointments, reports',
-  DOCTOR: 'Doctor: view your patients & create medical records',
-  PATIENT: 'Patient: view your own records, appointments & profile'
-};
-
-function selectRole(role, el){
   document.querySelectorAll('.role-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('hintText').textContent = hints[role];
-  document.getElementById('hintBadge').classList.add('show');
 }
 
-function fillDemo(u,p,role){
-  document.getElementById('username').value = u;
-  document.getElementById('password').value = p;
-  const tab = document.querySelector(`.role-tab[data-role="${role}"]`);
-  if(tab) selectRole(role, tab);
+// 🔥 AUTO SET ROLE FROM INDEX PAGE
+const savedRole = localStorage.getItem("login_role");
+if(savedRole){
+  selectedRole = savedRole;
+  const tab = document.querySelector(`.role-tab[data-role="${savedRole}"]`);
+  if(tab) tab.classList.add("active");
 }
 
-function togglePwd(){
-  const i = document.getElementById('password');
-  const b = document.getElementById('eyeBtn');
-  i.type = i.type === 'password' ? 'text' : 'password';
-  b.textContent = i.type === 'password' ? '👁' : '🙈';
-}
-
+// ================= LOGIN =================
 async function doLogin(){
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value;
-  const btn = document.getElementById('loginBtn');
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
   if(!username || !password){
-    toast('Please enter username and password','error');
+    alert("Enter credentials");
     return;
   }
 
-  btn.classList.add('loading');
-  document.getElementById('btnText').textContent = 'Signing in…';
-
-  try {
+  try{
     const res = await API.login(username, password);
 
-    toast('Login successful','success');
+    // 🔥 FORCE ROLE FROM UI (IMPORTANT)
+    const role = selectedRole.toLowerCase();
 
-    const role = res.role?.toLowerCase();
+    localStorage.setItem("nexgen_role", role);
 
-    setTimeout(()=>{
-      window.location.href =
-        role === 'admin' ? 'admin.html' :
-        role === 'doctor' ? 'doctor.html' :
-        'patient.html';
-    }, 800);
+    if(role === "admin") window.location.href = "admin.html";
+    else if(role === "doctor") window.location.href = "doctor.html";
+    else window.location.href = "patient.html";
 
-  } catch (e) {
-    toast(e.message || 'Login failed','error');
-  } finally {
-    btn.classList.remove('loading');
-    document.getElementById('btnText').textContent = 'Sign In';
+  }catch(e){
+    alert("Login failed");
   }
 }
 
 // ENTER KEY
-document.addEventListener('keydown', e => {
-  if(e.key === 'Enter') doLogin();
+document.addEventListener("keydown", e=>{
+  if(e.key==="Enter") doLogin();
 });
-
-// AUTO REDIRECT IF LOGGED IN
-const stored = localStorage.getItem('nexgen_role');
-if(stored && localStorage.getItem('nexgen_token')){
-  const role = stored.toLowerCase();
-  window.location.href =
-    role === 'admin' ? 'admin.html' :
-    role === 'doctor' ? 'doctor.html' :
-    'patient.html';
-}
 </script>
+
+</body>
+</html>
